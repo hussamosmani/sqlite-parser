@@ -6,6 +6,6 @@ class ArgumentParser(ArgumentParserInterface):
             return Command.DB_INFO
         elif command == ".tables":
             return Command.TABLES
-        elif command == "SELECT":
+        elif command.upper() == "SELECT":
             return Command.SELECT
         return Command.NOT_SUPPORTED
