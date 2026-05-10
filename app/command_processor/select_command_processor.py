@@ -1,4 +1,4 @@
-from app.database_processor.database_processor import DatabaseProcessor
+from database_processor.database_processor import DatabaseProcessor
 
 
 class SelectCommandProcessor:
