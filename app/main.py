@@ -2,7 +2,7 @@ import sys
 
 from typing import BinaryIO, List, Tuple
 
-from app.database_processor.database_record_processor import DatabaseRecordProcessor
+from database_processor.database_record_processor import DatabaseRecordProcessor
 from database_processor.database_schema_processor import DatabaseSchemaProcessor
 from command_processor.tables_command_processor import TablesCommandProcessor
 from database_processor.database_reader import DatabaseReader
