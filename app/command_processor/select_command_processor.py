@@ -1,4 +1,4 @@
-from database_processor.database_processor import DatabaseProcessor
+from app.database_processor.database_processor import DatabaseProcessor
 
 
 class SelectCommandProcessor:
@@ -6,4 +6,4 @@ class SelectCommandProcessor:
         self._database_processor = database_processor
     
     def process(self, sql: str):
-        pass
+        self._database_processor.
