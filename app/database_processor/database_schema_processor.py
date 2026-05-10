@@ -1,6 +1,6 @@
 from typing import List
 
-from database_processor.database_reader import DatabaseReader
+from app.database_processor.database_reader import DatabaseReader
 
 
 class DatabaseSchemaProcessor:
@@ -14,8 +14,8 @@ class DatabaseSchemaProcessor:
     def get_page_size(self):
         return self._database_reader.retrieve_bytes_at_offset_as_int(self.PAGE_SIZE_OFFSET, 2)
     
-    def get_number_of_tables(self):
-        return self._database_reader.retrieve_bytes_at_offset_as_int(self.NUMBER_OF_CELLS_OFFSET,2)
+    def get_number_of_tables(self, offset = NUMBER_OF_CELLS_OFFSET ):
+        return self._database_reader.retrieve_bytes_at_offset_as_int(offset,2)
     
     def get_cell_pointer_array_offsets(self) -> List[int]:
         number_of_cells = self.get_number_of_tables()

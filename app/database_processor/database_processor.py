@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Optional
 
-from database_processor.database_record_processor import DatabaseRecordProcessor
-from database_processor.database_schema_processor import DatabaseSchemaProcessor
-from database_processor.database_reader import DatabaseReader
+from app.database_processor.database_record_processor import DatabaseRecordProcessor
+from app.database_processor.database_schema_processor import DatabaseSchemaProcessor
+from app.database_processor.database_reader import DatabaseReader
 
 
 class DatabaseProcessor:
@@ -14,7 +14,9 @@ class DatabaseProcessor:
     def get_page_size(self):
         return self._database_schema_processor.get_page_size()
     
-    def get_number_of_tables(self):
+    def get_number_of_tables(self, offset: Optional[int] = None):
+        if offset:
+            return self._database_schema_processor.get_number_of_tables(offset + 3)
         return self._database_schema_processor.get_number_of_tables()
     
     def get_table_name_from_record_at_offset(self,offset:int) -> str:
@@ -23,3 +25,7 @@ class DatabaseProcessor:
     
     def get_cell_pointer_array_offsets(self) -> List[int]:
         return self._database_schema_processor.get_cell_pointer_array_offsets()
+    
+    def get_root_page_from_record_at_offset(self, offset: int) -> int:
+        record_header = self._database_record_processor.parse_header(offset)
+        return self._database_record_processor.get_root_page_from_record_header(record_header)

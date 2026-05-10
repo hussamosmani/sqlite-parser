@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from database_processor.database_reader import DatabaseReader
+from app.database_processor.database_reader import DatabaseReader
 
 
 @dataclass
@@ -62,12 +62,23 @@ class DatabaseRecordProcessor:
             body_offset=offset_of_record_body,
         )
     
-    def get_table_name_from_record_header(self, record_header: RecordHeader):
+    def get_root_page_from_record_header(self,record_header: RecordHeader) -> int:
         assert record_header.body_offset is not None
         assert record_header.record_type_size is not None
         assert record_header.record_name_size is not None
+        assert record_header.table_name_size is not None
+        assert record_header.rootpage_size is not None
+        
+        offset_to_root_page = record_header.body_offset + record_header.record_type_size + record_header.record_name_size + record_header.table_name_size
+        return self._database_reader.retrieve_bytes_at_offset_as_int(offset_to_root_page, record_header.rootpage_size)
+    
+    def get_table_name_from_record_header(self, record_header: RecordHeader) -> str:
+        assert record_header.body_offset is not None
+        assert record_header.record_type_size is not None
+        assert record_header.record_name_size is not None
+        assert record_header.table_name_size is not None
         offset_to_table_name_in_record = record_header.body_offset + record_header.record_type_size + record_header.record_name_size
-        table_name_as_bytes = self._database_reader.retrieve_bytes_at_offset(offset_to_table_name_in_record, record_header.record_name_size)
+        table_name_as_bytes = self._database_reader.retrieve_bytes_at_offset(offset_to_table_name_in_record, record_header.table_name_size)
         return table_name_as_bytes.decode("utf-8")
 
 

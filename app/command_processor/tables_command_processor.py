@@ -1,4 +1,4 @@
-from database_processor.database_processor import DatabaseProcessor
+from app.database_processor.database_processor import DatabaseProcessor
 
 
 class TablesCommandProcessor:
