@@ -16,6 +16,9 @@ class DatabaseSchemaProcessor:
     
     def get_number_of_tables(self, offset = NUMBER_OF_CELLS_OFFSET ):
         return self._database_reader.retrieve_bytes_at_offset_as_int(offset,2)
+
+    def get_page_type_from_header(self, offset ):
+            return self._database_reader.retrieve_bytes_at_offset_as_int(offset,1)
     
     def get_cell_pointer_array_offsets(self) -> List[int]:
         number_of_cells = self.get_number_of_tables()

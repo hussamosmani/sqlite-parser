@@ -20,7 +20,7 @@ def main():
     database_reader = DatabaseReader(database_file_path)
     database_schema_processor = DatabaseSchemaProcessor(database_reader)
     database_record_processor = DatabaseRecordProcessor(database_reader)
-    database_processor = DatabaseProcessor(database_schema_processor,database_record_processor)
+    database_processor = DatabaseProcessor(database_schema_processor,database_record_processor,database_reader)
     database_info_command_processor = DbInfoCommandProcessor(database_processor)
     database_tables_command_processor = TablesCommandProcessor(database_processor)
     database_select_command_processor = SelectCommandProcessor(database_processor)
