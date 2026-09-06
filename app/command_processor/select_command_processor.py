@@ -4,7 +4,8 @@ from app.database_processor.database_processor import DatabaseProcessor
 
 
 class SelectCommandProcessor:
-    COUNT_ALL_KEYWORDS = "COUNT(*)"
+    COUNT_ALL_KEYWORDS_UPPER = "COUNT(*)"
+    COUNT_ALL_KEYWORDS_LOWER = "count(*)"
 
     def __init__(self, database_processor: DatabaseProcessor) -> None:
         self._database_processor = database_processor
@@ -12,7 +13,7 @@ class SelectCommandProcessor:
     def process(self, sql: str) -> None:
         select_expression, table_name = self._parse_select(sql)
 
-        if select_expression == self.COUNT_ALL_KEYWORDS:
+        if select_expression in [self.COUNT_ALL_KEYWORDS_UPPER,self.COUNT_ALL_KEYWORDS_LOWER]:
             self._process_count(table_name)
             return
 
