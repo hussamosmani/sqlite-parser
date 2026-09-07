@@ -13,7 +13,7 @@ class SelectCommandProcessor:
     def process(self, sql: str) -> None:
         select_expression, table_name = self._parse_select(sql)
 
-        if select_expression in [self.COUNT_ALL_KEYWORDS_UPPER,self.COUNT_ALL_KEYWORDS_LOWER]:
+        if select_expression[0] in [self.COUNT_ALL_KEYWORDS_UPPER,self.COUNT_ALL_KEYWORDS_LOWER]:
             self._process_count(table_name)
             return
 
@@ -27,7 +27,7 @@ class SelectCommandProcessor:
 
     def _process_column_select(
         self,
-        select_expression: str,
+        select_expression: List[str],
         table_name: str,
     ) -> None:
         record_offset = self._get_offset_to_target_record(table_name)
@@ -38,29 +38,49 @@ class SelectCommandProcessor:
         )
 
         column_names = self._get_column_names_in_order(create_table_sql)
-        column_index = column_names.index(select_expression)
 
-        root_page_offset = self._get_root_page_offset_from_record(record_offset)
+        expression_to_print_dict = {}
+        for column_name in select_expression:
+            column_index = column_names.index(column_name)
 
-        cell_count = self._database_processor.get_number_of_tables(
-            root_page_offset
-        )
+            root_page_offset = self._get_root_page_offset_from_record(record_offset)
 
-        cell_contents = (
-            self._database_processor
-            .get_cell_content_array_from_rootpage_offset(
-                root_page_offset,
-                cell_count,
-                column_names,
+            cell_count = self._database_processor.get_number_of_tables(
+                root_page_offset
             )
-        )
 
-        for cell_content in cell_contents:
-            print(cell_content[column_index].decode("utf-8"))
+            cell_contents = (
+                self._database_processor
+                .get_cell_content_array_from_rootpage_offset(
+                    root_page_offset,
+                    cell_count,
+                    column_names,
+                )
+            )
+            i = 0
 
-    def _parse_select(self, sql: str) -> tuple[str, str]:
-        _, select_expression, _, table_name = sql.split()
-        return select_expression, table_name
+            for cell_content in cell_contents:
+                if i not in expression_to_print_dict:
+                    expression_to_print_dict[i] = []
+                expression_to_print_dict[i].append(cell_content[column_index].decode("utf-8"))
+                i+=1
+        for expression in expression_to_print_dict:
+            print("|".join(expression_to_print_dict[expression]))
+
+    def _parse_select(self, sql: str) -> tuple[List[str], str]:
+        get_columns_to_parse = self._get_columns_to_parse(sql)
+        table_name = sql.split()[-1]
+        return get_columns_to_parse, table_name
+
+    def _get_columns_to_parse(self,sql:str):
+        from_keyword = "FROM"
+        select_keyword = "SELECT"
+        index_of_from = sql.index(from_keyword) 
+        select_expression = sql[len(select_keyword):index_of_from]
+        columns_to_select = select_expression.split(",")
+        for i in range(0,len(columns_to_select)):
+            columns_to_select[i] = columns_to_select[i].strip()
+        return columns_to_select
 
     def _get_root_page_offset(self, table_name: str) -> int:
         record_offset = self._get_offset_to_target_record(table_name)
