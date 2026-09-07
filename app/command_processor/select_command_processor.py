@@ -73,9 +73,10 @@ class SelectCommandProcessor:
         return get_columns_to_parse, table_name
 
     def _get_columns_to_parse(self,sql:str):
+        normalized_sql = sql.upper()
         from_keyword = "FROM"
         select_keyword = "SELECT"
-        index_of_from = sql.index(from_keyword) 
+        index_of_from = normalized_sql.index(from_keyword) 
         print(index_of_from)
         select_expression = sql[len(select_keyword):index_of_from]
         columns_to_select = select_expression.split(",")
