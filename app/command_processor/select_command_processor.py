@@ -77,7 +77,6 @@ class SelectCommandProcessor:
         from_keyword = "FROM"
         select_keyword = "SELECT"
         index_of_from = normalized_sql.index(from_keyword) 
-        print(index_of_from)
         select_expression = sql[len(select_keyword):index_of_from]
         columns_to_select = select_expression.split(",")
         for i in range(0,len(columns_to_select)):
