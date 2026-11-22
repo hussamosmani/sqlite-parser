@@ -12,7 +12,6 @@ class SelectCommandProcessor:
 
     def process(self, sql: str) -> None:
         select_expression, table_name, parsed_wear_clause = self._parse_select(sql)
-        print(1,select_expression)
 
         if select_expression[0] in [self.COUNT_ALL_KEYWORDS_UPPER,self.COUNT_ALL_KEYWORDS_LOWER]:
             self._process_count(table_name)
