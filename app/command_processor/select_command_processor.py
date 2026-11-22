@@ -12,6 +12,7 @@ class SelectCommandProcessor:
 
     def process(self, sql: str) -> None:
         select_expression, table_name, parsed_wear_clause = self._parse_select(sql)
+        print(1,select_expression)
 
         if select_expression[0] in [self.COUNT_ALL_KEYWORDS_UPPER,self.COUNT_ALL_KEYWORDS_LOWER]:
             self._process_count(table_name)
@@ -23,13 +24,15 @@ class SelectCommandProcessor:
         root_page_offset = self._get_root_page_offset(table_name)
         row_count = self._database_processor.get_number_of_tables(root_page_offset)
 
+        print(row_count)
 
     def _process_column_select(
         self,
         select_expression: List[str],
         table_name: str,
-        parsed_wear_clause: Optional[tuple[str,str]]
+        parsed_wear_clause: Optional[tuple[str, str]]
     ) -> None:
+
         record_offset = self._get_offset_to_target_record(table_name)
 
         create_table_sql = (
@@ -39,42 +42,54 @@ class SelectCommandProcessor:
 
         column_names = self._get_column_names_in_order(create_table_sql)
 
-        parsed_where_column_index,parsed_column_where_value = None, None
-        if parsed_wear_clause:
-            parsed_column_where_column,parsed_column_where_value = parsed_wear_clause
-            parsed_where_column_index = column_names.index(parsed_column_where_column) - 1
+        root_page_offset = self._get_root_page_offset_from_record(record_offset)
 
-        expression_to_print_dict = {}
-        for column_name in select_expression:
-            column_index = column_names.index(column_name)
+        cell_count = self._database_processor.get_number_of_tables(
+            root_page_offset
+        )
 
-            root_page_offset = self._get_root_page_offset_from_record(record_offset)
-
-            cell_count = self._database_processor.get_number_of_tables(
-                root_page_offset
+        cell_contents = (
+            self._database_processor
+            .get_cell_content_array_from_rootpage_offset(
+                root_page_offset,
+                cell_count,
+                column_names,
             )
+        )
 
-            cell_contents = (
-                self._database_processor
-                .get_cell_content_array_from_rootpage_offset(
-                    root_page_offset,
-                    cell_count,
-                    column_names,
-                )
-            )
-            i = 0
+        selected_column_indices = [
+            column_names.index(column)
+            for column in select_expression
+        ]
 
-            for cell_content in cell_contents:
-                if i not in expression_to_print_dict:
-                    expression_to_print_dict[i] = []
-                expression_to_print_dict[i].append(cell_content[column_index].decode("utf-8"))
-                i+=1
-        for expression in expression_to_print_dict:
-            if parsed_where_column_index and parsed_column_where_value != expression_to_print_dict[expression][parsed_where_column_index]:
-                continue
+        for row in cell_contents:
 
-            print("|".join(expression_to_print_dict[expression]))
+            # Apply WHERE filter
+            if parsed_wear_clause is not None:
+                where_column, expected_value = parsed_wear_clause
 
+                where_column_index = column_names.index(where_column)
+
+                actual_value = row[where_column_index]
+
+                if isinstance(actual_value, bytes):
+                    actual_value = actual_value.decode("utf-8")
+
+                if str(actual_value) != expected_value:
+                    continue
+
+            # Print selected columns
+            selected_values = []
+
+            for column_index in selected_column_indices:
+                value = row[column_index]
+
+                if isinstance(value, bytes):
+                    value = value.decode("utf-8")
+
+                selected_values.append(str(value))
+
+            print("|".join(selected_values))
     def _parse_select(self, sql: str) -> tuple[List[str], str, Optional[tuple[str,str]]]:
         get_columns_to_parse = self._get_columns_to_parse(sql)
         table_name = self._get_table_name(sql)
