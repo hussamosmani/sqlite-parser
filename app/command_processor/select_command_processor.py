@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Tuple
 
 from app.database_processor.database_processor import DatabaseProcessor
 
@@ -11,24 +11,24 @@ class SelectCommandProcessor:
         self._database_processor = database_processor
 
     def process(self, sql: str) -> None:
-        select_expression, table_name = self._parse_select(sql)
+        select_expression, table_name, parsed_wear_clause = self._parse_select(sql)
 
         if select_expression[0] in [self.COUNT_ALL_KEYWORDS_UPPER,self.COUNT_ALL_KEYWORDS_LOWER]:
             self._process_count(table_name)
             return
 
-        self._process_column_select(select_expression, table_name)
+        self._process_column_select(select_expression, table_name, parsed_wear_clause)
 
     def _process_count(self, table_name: str) -> None:
         root_page_offset = self._get_root_page_offset(table_name)
         row_count = self._database_processor.get_number_of_tables(root_page_offset)
 
-        print(row_count)
 
     def _process_column_select(
         self,
         select_expression: List[str],
         table_name: str,
+        parsed_wear_clause: Optional[tuple[str,str]]
     ) -> None:
         record_offset = self._get_offset_to_target_record(table_name)
 
@@ -38,6 +38,11 @@ class SelectCommandProcessor:
         )
 
         column_names = self._get_column_names_in_order(create_table_sql)
+
+        parsed_where_column_index,parsed_column_where_value = None, None
+        if parsed_wear_clause:
+            parsed_column_where_column,parsed_column_where_value = parsed_wear_clause
+            parsed_where_column_index = column_names.index(parsed_column_where_column) - 1
 
         expression_to_print_dict = {}
         for column_name in select_expression:
@@ -65,12 +70,16 @@ class SelectCommandProcessor:
                 expression_to_print_dict[i].append(cell_content[column_index].decode("utf-8"))
                 i+=1
         for expression in expression_to_print_dict:
+            if parsed_where_column_index and parsed_column_where_value != expression_to_print_dict[expression][parsed_where_column_index]:
+                continue
+
             print("|".join(expression_to_print_dict[expression]))
 
-    def _parse_select(self, sql: str) -> tuple[List[str], str]:
+    def _parse_select(self, sql: str) -> tuple[List[str], str, Optional[tuple[str,str]]]:
         get_columns_to_parse = self._get_columns_to_parse(sql)
-        table_name = sql.split()[-1]
-        return get_columns_to_parse, table_name
+        table_name = self._get_table_name(sql)
+        parsed_where_clause = self._parse_wear_clause(sql)
+        return get_columns_to_parse, table_name,parsed_where_clause 
 
     def _get_columns_to_parse(self,sql:str):
         normalized_sql = sql.upper()
@@ -82,6 +91,29 @@ class SelectCommandProcessor:
         for i in range(0,len(columns_to_select)):
             columns_to_select[i] = columns_to_select[i].strip()
         return columns_to_select
+
+    def _get_table_name(self, sql:str) -> str:
+        where_keyword = "WHERE"
+        normalized_sql = sql.upper() 
+        where_index = normalized_sql.find(where_keyword) 
+        if where_index == -1:
+            return sql.split()[-1]
+
+        from_keyword = "FROM"
+        index_of_from = normalized_sql.index(from_keyword) 
+        table_name = sql[len(from_keyword) + index_of_from: where_index ]
+        return table_name.strip()
+
+    def _parse_wear_clause(self, sql: str) -> Optional[Tuple[str,str]]:
+        where_keyword = "WHERE"
+        normalized_sql = sql.upper()
+        index_of_where = normalized_sql.find(where_keyword)
+        if index_of_where == -1:
+            return
+        where_expression = sql[index_of_where + len(where_keyword):]
+        target_column, target_value = where_expression.split("=")
+        return target_column.strip(), target_value.strip()[1:-1]
+
 
     def _get_root_page_offset(self, table_name: str) -> int:
         record_offset = self._get_offset_to_target_record(table_name)
